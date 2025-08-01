@@ -1,0 +1,502 @@
+/* src/styles/global.css - Reverted to Stable MD3 Baseline */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  font-size: 13px;
+}
+
+#root {
+    width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+}
+
+:root {
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+
+  /* Theme variables will be applied via body[data-theme] */
+}
+
+/* --- THEME COLORS --- */
+body[data-theme='dark'] {
+  --bg-primary: #0D0B18;
+  --text-primary: #F2F2F7;
+  --text-secondary: #A09EB1;
+  --text-tertiary: #676478;
+  --accent-primary: #8A78F5;
+  --accent-glow: rgba(138, 120, 245, 0.4);
+  --accent-secondary: #33304D;
+  --accent-danger: #FF5A5A;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(26, 23, 41, 0.5);
+  --input-bg: rgba(0,0,0,0.2);
+  --scroll-thumb-bg: rgba(255, 255, 255, 0.1);
+  --status-delivered: #50E3C2;
+  --status-shipped: #F8E71C;
+  --status-ordered: #A09EB1;
+  --accent-primary-rgb: 138, 120, 245;
+}
+body[data-theme='light'] {
+  --bg-primary: #F0F2F5;
+  --text-primary: #1C1C1E;
+  --text-secondary: #636366;
+  --text-tertiary: #8E8E93;
+  --accent-primary: #007AFF;
+  --accent-glow: rgba(0, 122, 255, 0.3);
+  --accent-secondary: #E5E5EA;
+  --accent-danger: #D32F2F;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --input-bg: #FFFFFF;
+  --scroll-thumb-bg: rgba(0, 0, 0, 0.2);
+  --status-delivered: #28a745;
+  --status-shipped: #ffc107;
+  --status-ordered: #636366;
+  --accent-primary-rgb: 0, 122, 255;
+}
+body { background-color: var(--bg-primary); }
+
+/* --- GLASSMORPHISM & BUTTONS --- */
+.dark-glass, .light-glass {
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background-color: var(--glass-bg);
+}
+button {
+  padding: 8px 18px; border: none; border-radius: 100px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.2s ease; white-space: nowrap; line-height: 1.5; display: inline-flex; align-items: center; justify-content: center;
+}
+button:hover { transform: translateY(-1px); }
+button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-primary { background: var(--accent-primary); color: var(--text-primary); box-shadow: 0 0 15px var(--accent-glow); }
+body[data-theme='light'] .btn-primary { color: #FFFFFF; }
+.btn-primary:hover { box-shadow: 0 0 25px var(--accent-glow); }
+.btn-secondary { background-color: var(--accent-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.btn-secondary:hover { background-color: color-mix(in srgb, var(--accent-secondary) 80%, black); color: var(--text-primary); }
+.btn-danger { background-color: transparent; color: var(--accent-danger); border: 1px solid var(--accent-danger); }
+.btn-danger:hover { background-color: rgba(var(--accent-danger), 0.1); }
+input, textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--text-primary); background-color: var(--input-bg); }
+input:focus, textarea:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 10px var(--accent-glow); }
+
+/* --- UTILITIES & SCROLLBAR --- */
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-row { display: flex; flex-direction: row; }
+.gap-1 { gap: var(--spacing-1); } .gap-2 { gap: var(--spacing-2); } .gap-3 { gap: var(--spacing-3); } .gap-4 { gap: var(--spacing-4); } .gap-5 { gap: var(--spacing-5); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb-bg); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--scroll-thumb-bg) 80%, white); }
+.status-Delivered { color: var(--status-delivered); font-weight: 500; }
+.status-Shipped { color: var(--status-shipped); font-weight: 500; }
+.status-Ordered { color: var(--status-ordered); font-weight: 500; }
+@keyframes fadeInPop { from { opacity: 0; transform: translateY(-5px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Add this to src/styles/global.css */
+
+.section-title {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-3);
+  font-weight: 600;
+}
+/* --- ANIMATION & SWITCH (CORRECTED) --- */
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}
+button.accordion-pulse {
+  animation: pulse-glow 2.5s infinite;
+  border-radius: 12px !important;
+}
+/* CORRECTED: Animation for the accordion header with RAINBOW pulse */
+@keyframes rainbow-pulse-text {
+  0%   { color: var(--text-primary); }
+  25%  { color: #8A78F5; } /* Purple */
+  50%  { color: #50E3C2; } /* Teal */
+  75%  { color: #F8E71C; } /* Yellow */
+  100% { color: var(--text-primary); }
+}
+
+button.accordion-pulse span { /* Target the text spans inside the button */
+  animation: rainbow-pulse-text 3s ease-in-out infinite;
+}
+/* Add this to the end of src/styles/global.css */
+
+.force-black-text {
+  color: #000000 !important;
+}
+/* Add to the end of src/styles/global.css */
+
+/* --- FINAL FLEXBOX LAYOUT SOLUTION --- */
+.viewport-container {
+  /* This class will be on the root div in App.jsx */
+  width: 420px;
+  height: 550px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-4);
+  background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+.main-header {
+  flex-shrink: 0; /* Header keeps its natural height */
+  padding-bottom: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--border-color);
+}
+/* Add to the end of src/styles/global.css */
+
+/* --- Price Trend Icon Colors (DEFINITIVE FIX) --- */
+.trend-down {
+  color: #50E3C2 !important; /* Green for Dark Theme */
+  /* Add light theme specific color to ensure it works across themes if needed */
+}
+
+body[data-theme='light'] .trend-down {
+  color: #28a745 !important; /* Green for Light Theme */
+}
+
+.trend-up {
+  color: #BA1A1A !important;   /* Red for Dark Theme */
+}
+
+body[data-theme='light'] .trend-up {
+  color: #D32F2F !important;   /* Red for Light Theme */
+}
+/* Professional spacing tokens */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+}
+/* === BEM Styles for Missing Info Modal === */
+
+/* Block */
+.missing-info-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Elements */
+.missing-info-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.missing-info-modal__content {
+  position: relative; /* To sit on top of the overlay */
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  animation: mim-slide-up 0.3s ease-out; /* Using a prefixed animation name */
+}
+
+.missing-info-modal__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.missing-info-modal__subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.missing-info-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.missing-info-modal__field {
+  /* container for label and input */
+}
+
+.missing-info-modal__label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.missing-info-modal__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.missing-info-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.missing-info-modal__button {
+  /* Base button styles can go here if needed */
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Modifiers */
+.missing-info-modal__button--primary {
+  background-color: #007bff; /* Example primary color */
+  color: white;
+}
+.missing-info-modal__button--primary:hover {
+  background-color: #0056b3;
+}
+
+.missing-info-modal__button--secondary {
+  background-color: #e9ecef; /* Example secondary color */
+  color: #333;
+}
+.missing-info-modal__button--secondary:hover {
+  background-color: #ced4da;
+}
+
+.missing-info-modal__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* Prefixed animation to avoid collision */
+@keyframes mim-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+  .archive-modal__subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: var(--spacing-4);
+    text-align: center;
+  }
+  .archive-modal__reasons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+  }
+  .archive-modal__reason-btn {
+    width: 100%;
+    padding: var(--spacing-3);
+    text-align: left;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .archive-modal__reason-btn:hover {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-secondary);
+  }
+  .archive-modal__reason-btn.selected {
+    border-color: var(--accent-primary);
+    background-color: var(--accent-primary);
+    color: #fff;
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  body[data-theme='light'] .archive-modal__reason-btn.selected {
+      color: #fff;
+  }
+  .archive-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-3);
+    margin-top: var(--spacing-5);
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--border-color);
+  }
+;
+.offer-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: var(--spacing-4);
+    margin-bottom: var(--spacing-4);
+    position: relative;
+    overflow: hidden;
+  }
+  .offer-card.recommended {
+    border-color: var(--accent-primary);
+  }
+  .offer-card__badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: var(--accent-primary);
+    color: #fff;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border-bottom-left-radius: 12px;
+  }
+  .offer-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-3);
+  }
+  .offer-card__logo {
+    height: 24px;
+    max-width: 100px;
+    object-fit: contain;
+  }
+  .offer-card__price-info {
+    text-align: right;
+  }
+  .price {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .duration {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: block;
+  }
+  .coverage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--spacing-4) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .coverage-list li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+  }
+  .administered-by {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-align: center;
+    margin-bottom: var(--spacing-3);
+  }
+;
+/* --- Professional Toggle Switch --- */
+
+.toggle-switch input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0; /* Prevents the switch from shrinking in a flex container */
+}
+
+/* We make this selector more specific to win the CSS war */
+.toggle-switch input[type="checkbox"] { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+  padding: 0; /* Explicitly remove the padding */
+  margin: 0; /* Explicitly remove the margin */
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--accent-secondary);
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Added a subtle shadow for depth */
+}
+
+input:checked + .slider {
+  background-color: var(--accent-primary);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--accent-primary); /* Add a focus ring for accessibility */
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}

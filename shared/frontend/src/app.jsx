@@ -1,0 +1,1316 @@
+// src/App.jsx -- ULTRA HIGH-PERFORMANCE PROFESSIONAL GRADE VERSION
+
+// REPLACE all your existing imports at the top of App.jsx with this block
+
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy, startTransition } from 'react';
+import { createPortal } from 'react-dom';
+import useAuth from './hooks/useAuth';
+import usePurchases from './hooks/usePurchases';
+import DebugPanel from './components/DebugPanel';
+
+
+// Lazy load heavy components
+const PriceDropAssistModal = lazy(() => import('./components/PriceDropAssistModal'));
+const ClaimTypeChoiceModal = lazy(() => import('./components/ClaimTypeChoiceModal'));
+const UserSettings = lazy(() => import('./components/UserSettings'));
+const MissingInfoModal = lazy(() => import('./components/MissingInfoModal'));
+const ArchivePurchaseModal = lazy(() => import('./components/ArchivePurchaseModal'));
+const ProtectPage = lazy(() => import('./pages/ProtectPage'));
+const CheckoutModal = lazy(() => import('./components/CheckoutModal'));
+
+// Essential components
+import Button from './components/Button';
+import PillarCarousel from './components/PillarCarousel';
+import PurchaseVault from './components/PurchaseVault';
+import ModalWrapper from './components/ModalWrapper';
+import Popover from './components/Popover';
+import Accordion from './components/Accordion';
+import SocialLogins from './components/SocialLogins';
+
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  sendPasswordResetEmail 
+} from 'firebase/globalClient.auth';
+
+// Consolidated Firebase Service Imports
+import { 
+  globalClient.updatePurchase,
+  // You might need to add other functions you use from here
+} from './services/firebase-enhanced-global.js'; 
+import { createCheckoutSession } from './services/firebase-enhanced-global.js';
+import { updateUserSyncPreference } from './services/firebase-enhanced-global.js';
+// Consolidated Helper Imports
+import { 
+  getUserFirstName, 
+  openExternalLink,
+  getGoogleOAuthUrl
+} from './utils/helpers';
+
+// Animated CLAIMSO loading with spinning O
+const LoadingSpinner = React.memo(() => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100px',
+    width: '100%',
+    flexDirection: 'column',
+    gap: '12px'
+  }}>
+    <div style={{
+      fontSize: '24px',
+      fontWeight: '800',
+      letterSpacing: '2px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '2px',
+      color: 'var(--text-primary)'
+    }}>
+      <span>CLAIMS</span>
+      <div style={{
+        width: '24px',
+        height: '24px',
+        border: '3px solid var(--input-border)',
+        borderTop: '3px solid var(--color-primary)',
+        borderRadius: '50%',
+        animation: 'spinO 1s linear infinite',
+        display: 'inline-block'
+      }} />
+    </div>
+    <div style={{
+      fontSize: '12px',
+      color: 'var(--text-secondary)',
+      fontWeight: '500'
+    }}>
+      Loading your dashboard...
+    </div>
+  </div>
+));
+
+// Optimized themed input with reduced re-renders
+const ThemedInput = React.memo(({ type, placeholder, value, onChange, required, disabled, autoComplete, style = {} }) => (
+  <input
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    required={required}
+    disabled={disabled}
+    autoComplete={autoComplete}
+    style={{
+      padding: '12px 16px',
+      borderRadius: '8px',
+      border: '1px solid var(--input-border)',
+      backgroundColor: 'var(--input-bg)',
+      color: 'var(--text-primary)',
+      fontSize: '14px',
+      fontFamily: 'inherit',
+      transition: 'border-color 0.15s ease',
+      outline: 'none',
+      width: '100%',
+      boxSizing: 'border-box',
+      ...style
+    }}
+    onFocus={(e) => {
+      e.target.style.borderColor = 'var(--color-primary)';
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = 'var(--input-border)';
+    }}
+  />
+));
+
+// Optimized alert component
+const AlertMessage = React.memo(({ type, message, onDismiss }) => (
+  <div style={{ 
+    width: '100%', 
+    padding: '12px 16px', 
+    borderRadius: '8px', 
+    marginBottom: '16px',
+    backgroundColor: type === 'error' 
+      ? 'var(--alert-error-bg)' 
+      : 'var(--alert-success-bg)',
+    border: `1px solid ${type === 'error' 
+      ? 'var(--alert-error-border)' 
+      : 'var(--alert-success-border)'}`,
+    color: type === 'error' 
+      ? 'var(--alert-error-text)' 
+      : 'var(--alert-success-text)',
+    fontSize: '13px',
+    fontWeight: '500',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  }}>
+    <span>{message}</span>
+    {onDismiss && (
+      <button
+        onClick={onDismiss}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'inherit',
+          cursor: 'pointer',
+          fontSize: '16px',
+          padding: '0',
+          marginLeft: '8px'
+        }}
+      >
+        ×
+      </button>
+    )}
+  </div>
+));
+
+function App() {
+  // Auth and data hooks
+  const { user, userData, isLoading: isLoadingAuth, logout, refetchUserData } = useAuth();
+  const { purchases, isLoading: isLoadingPurchases } = usePurchases(user?.uid);
+  
+  // Optimized form state management
+  const [formState, setFormState] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    isRegisterView: false,
+    showForgotPassword: false
+  });
+  
+  const [uiState, setUiState] = useState({
+    authError: '',
+    authSuccess: '',
+    isLoading: false,
+    theme: localStorage.getItem('claimso-theme') || 'dark'
+  });
+  
+  const [modalState, setModalState] = useState({
+    isPriceDropModalOpen: false,
+    isClaimTypeModalOpen: false,
+    isMissingInfoModalOpen: false,
+    isArchiveModalOpen: false,
+    selectedPurchaseForModal: null,
+    isUserSettingsPopoverOpen: false,
+    isDeleteConfirmModalOpen: false
+  });
+
+  const [activeTab, setActiveTab] = useState('dashboard');
+const [selectedPlan, setSelectedPlan] = useState(null);
+const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+
+
+  const [isCalendarSynced, setIsCalendarSynced] = useState(
+    () => localStorage.getItem('claimso-calendar-synced') === 'true'
+  );
+
+
+  // Performance: Memoized update functions with startTransition for non-urgent updates
+  const updateFormState = useCallback((updates) => {
+    setFormState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const updateUiState = useCallback((updates) => {
+    startTransition(() => {
+      setUiState(prev => ({ ...prev, ...updates }));
+    });
+  }, []);
+
+  const updateModalState = useCallback((updates) => {
+    setModalState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  // Optimized theme effect with requestAnimationFrame for smooth transitions
+  useEffect(() => {
+    const applyTheme = () => {
+      const root = document.documentElement;
+      
+      if (uiState.theme === 'dark') {
+        root.style.setProperty('--text-primary', '#ffffff');
+        root.style.setProperty('--text-secondary', 'rgba(255, 255, 255, 0.7)');
+        root.style.setProperty('--bg-primary', '#0a0a0a');
+        root.style.setProperty('--bg-secondary', '#1a1a1a');
+        root.style.setProperty('--input-bg', 'rgba(255, 255, 255, 0.04)');
+        root.style.setProperty('--input-border', 'rgba(255, 255, 255, 0.08)');
+        root.style.setProperty('--color-primary', '#3b82f6');
+        root.style.setProperty('--alert-error-bg', 'rgba(239, 68, 68, 0.1)');
+        root.style.setProperty('--alert-error-border', 'rgba(239, 68, 68, 0.2)');
+        root.style.setProperty('--alert-error-text', '#ef4444');
+        root.style.setProperty('--alert-success-bg', 'rgba(34, 197, 94, 0.1)');
+        root.style.setProperty('--alert-success-border', 'rgba(34, 197, 94, 0.2)');
+        root.style.setProperty('--alert-success-text', '#22c55e');
+      } else {
+        root.style.setProperty('--text-primary', '#1f2937');
+        root.style.setProperty('--text-secondary', 'rgba(31, 41, 55, 0.7)');
+        root.style.setProperty('--bg-primary', '#ffffff');
+        root.style.setProperty('--bg-secondary', '#f8fafc');
+        root.style.setProperty('--input-bg', 'rgba(31, 41, 55, 0.04)');
+        root.style.setProperty('--input-border', 'rgba(31, 41, 55, 0.08)');
+        root.style.setProperty('--color-primary', '#3b82f6');
+        root.style.setProperty('--alert-error-bg', 'rgba(239, 68, 68, 0.1)');
+        root.style.setProperty('--alert-error-border', 'rgba(239, 68, 68, 0.2)');
+        root.style.setProperty('--alert-error-text', '#dc2626');
+        root.style.setProperty('--alert-success-bg', 'rgba(34, 197, 94, 0.1)');
+        root.style.setProperty('--alert-success-border', 'rgba(34, 197, 94, 0.2)');
+        root.style.setProperty('--alert-success-text', '#16a34a');
+      }
+      
+      document.body.setAttribute('data-theme', uiState.theme);
+      localStorage.setItem('claimso-theme', uiState.theme);
+    };
+
+    requestAnimationFrame(applyTheme);
+  }, [uiState.theme]);
+
+  // Auto-dismiss notifications with cleanup
+  useEffect(() => {
+    if (uiState.authError || uiState.authSuccess) {
+      const timer = setTimeout(() => {
+        updateUiState({ authError: '', authSuccess: '' });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [uiState.authError, uiState.authSuccess, updateUiState]);
+
+  // Validation functions (memoized for performance)
+  const validateEmail = useCallback((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), []);
+  const validatePassword = useCallback((password) => password.length >= 6, []);
+
+  // Form helpers
+  const clearForms = useCallback(() => {
+    updateFormState({
+      email: '',
+      password: '',
+      firstName: ''
+    });
+    updateUiState({
+      authError: '',
+      authSuccess: ''
+    });
+  }, [updateFormState, updateUiState]);
+
+  // Optimized globalClient.auth handlers with better error handling
+  const handleLogin = useCallback(async (e) => {
+    e.preventDefault();
+    
+    if (!validateEmail(formState.email)) {
+      updateUiState({ authError: 'Please enter a valid email address' });
+      return;
+    }
+    
+    if (!validatePassword(formState.password)) {
+      updateUiState({ authError: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    updateUiState({ isLoading: true, authError: '' });
+    
+    try {
+      await signInWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
+      updateUiState({ authSuccess: 'Welcome back!' });
+      clearForms();
+    } catch (error) {
+      const errorMessages = {
+        'globalClient.auth/user-not-found': 'No account found with this email',
+        'globalClient.auth/wrong-password': 'Incorrect password',
+        'globalClient.auth/too-many-requests': 'Too many attempts. Try again later',
+        'globalClient.auth/user-disabled': 'Account disabled'
+      };
+      updateUiState({ 
+        authError: errorMessages[error.code] || 'Login failed. Please try again' 
+      });
+    } finally {
+      updateUiState({ isLoading: false });
+    }
+  }, [formState.email, formState.password, validateEmail, validatePassword, updateUiState, clearForms]);
+
+  const handleRegister = useCallback(async (e) => {
+    e.preventDefault();
+    
+    if (!formState.firstName.trim()) {
+      updateUiState({ authError: 'Please enter your first name' });
+      return;
+    }
+    
+    if (!validateEmail(formState.email)) {
+      updateUiState({ authError: 'Please enter a valid email address' });
+      return;
+    }
+    
+    if (!validatePassword(formState.password)) {
+      updateUiState({ authError: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    updateUiState({ isLoading: true, authError: '' });
+    
+    try {
+      const cred = await createUserWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
+      await saveUserFirstName(cred.user.uid, formState.firstName);
+      await refetchUserData();
+      updateUiState({ authSuccess: 'Account created successfully!' });
+      clearForms();
+    } catch (error) {
+      const errorMessages = {
+        'globalClient.auth/email-already-in-use': 'Account with this email already exists',
+        'globalClient.auth/weak-password': 'Password is too weak'
+      };
+      updateUiState({ 
+        authError: errorMessages[error.code] || 'Registration failed. Please try again' 
+      });
+    } finally {
+      updateUiState({ isLoading: false });
+    }
+  }, [formState, validateEmail, validatePassword, updateUiState, clearForms, refetchUserData]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    updateUiState({ isLoading: true, authError: '' });
+    
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(globalClient.auth, provider);
+      updateUiState({ authSuccess: 'Google login successful!' });
+      clearForms();
+    } catch (error) {
+      if (error.code !== 'globalClient.auth/popup-closed-by-user') {
+        updateUiState({ authError: 'Google login failed. Please try again' });
+      }
+    } finally {
+      updateUiState({ isLoading: false });
+    }
+  }, [updateUiState, clearForms]);
+
+  const handleForgotPassword = useCallback(async (e) => {
+    e.preventDefault();
+    
+    if (!validateEmail(formState.email)) {
+      updateUiState({ authError: 'Please enter a valid email address' });
+      return;
+    }
+
+    updateUiState({ isLoading: true, authError: '' });
+    
+    try {
+      await sendPasswordResetEmail(globalClient.auth, formState.email);
+      updateUiState({ authSuccess: 'Password reset email sent!' });
+      updateFormState({ showForgotPassword: false });
+    } catch (error) {
+      const errorMessage = error.code === 'globalClient.auth/user-not-found' 
+        ? 'No account found with this email'
+        : 'Failed to send reset email';
+      updateUiState({ authError: errorMessage });
+    } finally {
+      updateUiState({ isLoading: false });
+    }
+  }, [formState.email, validateEmail, updateUiState, updateFormState]);
+
+
+
+  // App handlers (memoized)
+  const handleToggleTheme = useCallback(() => {
+    updateUiState({ theme: uiState.theme === 'light' ? 'dark' : 'light' });
+  }, [uiState.theme, updateUiState]);
+  
+   const handleCarouselCardAction = useCallback((purchase, actionType) => {
+    updateModalState({ selectedPurchaseForModal: purchase });
+
+    switch(actionType) {
+      case 'add_missing_info':
+        updateModalState({ isMissingInfoModalOpen: true });
+        break;
+      case 'price_drop':
+        updateModalState({ isPriceDropModalOpen: true });
+        break;
+      case 'file_claim':
+        updateModalState({ isClaimTypeModalOpen: true });
+        break;
+      default:
+        console.warn(`Unhandled carousel action type: ${actionType}`);
+    }
+  }, [updateModalState]);
+  
+  // Completely replace your old handleVaultItemAction with this new one
+  
+  const handleVaultItemAction = useCallback((purchase, actionType) => {
+    updateModalState({ selectedPurchaseForModal: purchase });
+
+    switch(actionType) {
+      case 'buy_again':
+        if (purchase.productUrl) {
+          openExternalLink(purchase.productUrl);
+        }
+        break;
+      
+      case 'edit_details':
+        // This reuses the MissingInfoModal we already built!
+        updateModalState({ isMissingInfoModalOpen: true });
+        break;
+        
+      case 'archive':
+        updateModalState({ isArchiveModalOpen: true });
+        break;
+
+      default:
+        console.warn(`Unhandled vault action type: ${actionType}`);
+    }
+  }, [updateModalState]); // Keep dependencies minimal
+  
+// Replace the existing handleCalendarSyncToggle in App.jsx with this one
+
+  const handleCalendarSyncToggle = useCallback(async () => {
+    // --- DEBUGGING ---
+    console.log('Toggle clicked. Current state:', isCalendarSynced);
+    
+    const newState = !isCalendarSynced;
+    
+    // --- Step 1: Optimistic UI Update ---
+    console.log('Setting optimistic UI state to:', newState);
+    setIsCalendarSynced(newState);
+    
+    try {
+        if (newState === true) {
+            console.log('Attempting to ENABLE sync...');
+            // ... (rest of the enable logic)
+        } else {
+            // --- Step 2b: DISABLING SYNC (The "Pause" Action) ---
+            console.log('Attempting to DISABLE sync...');
+            await updateUserSyncPreference(user.uid, false);
+            localStorage.setItem('claimso-calendar-synced', 'false');
+            updateUiState({ authSuccess: 'Calendar sync paused for new items.' });
+            console.log('Successfully disabled sync.');
+        }
+    } catch (error) {
+        // --- Step 3: Global Error Handling ---
+        console.error('Error in handleCalendarSyncToggle:', error);
+        
+        // Revert the optimistic UI state to reflect the reality.
+        console.log('Reverting UI state due to error. Setting back to:', !newState);
+        setIsCalendarSynced(!newState); 
+        updateUiState({ isLoading: false, authError: error.message || 'An unexpected error occurred.' });
+    }
+  }, [
+      isCalendarSynced, 
+      user, 
+      purchases, 
+      updateUiState, 
+      setIsCalendarSynced,
+      // Add any other functions used inside the OAuth flow if your linter demands it
+      // e.g., getGoogleOAuthUrl, exchangeAuthCodeForTokens, createCalendarEventsForPurchase
+    ]);
+
+// You will also need to update your `ProtectPage` to pass both the `purchase` and `plan`
+// objects up to this handler when a user clicks the button.
+
+  // Memoized data filtering for performance
+  const filteredPurchases = useMemo(() => ({
+    priceDrops: purchases.filter(p => p.postPurchaseType === 'price_drop'),
+    claimsoAssist: purchases.filter(p => p.postPurchaseType === 'warranty'),
+    all: purchases
+  }), [purchases]);
+
+  // Memoized user info for performance
+  const userInfo = useMemo(() => ({
+    initial: user?.email ? user.email.charAt(0).toUpperCase() : '?',
+    firstName: getUserFirstName({ ...user, ...userData })
+  }), [user, userData]);
+
+  if (isLoadingAuth) {
+    return (
+      <div style={{
+        height: '580px',
+        width: '400px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'var(--bg-primary)',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }}>
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  return (
+    <div className="viewport-container" style={{ 
+      backgroundColor: 'var(--bg-primary)', 
+      color: 'var(--text-primary)',
+      minHeight: '580px', // Changed from fixed height to minHeight
+      width: '400px',
+      display: 'flex',
+      flexDirection: 'column',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      overflow: 'hidden' // Keep container overflow hidden, let main handle scrolling
+    }}>
+      {/* Compact Header - 56px */}
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 20px',
+        borderBottom: '1px solid var(--input-border)',
+        backgroundColor: 'var(--bg-secondary)',
+        height: '56px',
+        flexShrink: 0,
+        zIndex: 100
+      }}>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: '20px', 
+          fontWeight: '800',
+          background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.5px'
+        }}>
+          CLAIMSO
+        </h1>
+        
+        {user && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px'
+          }}>
+            <span style={{ 
+              fontSize: '14px',
+              color: 'var(--text-secondary)',
+              fontWeight: '500'
+            }}>
+              Hi, {userInfo.firstName}!
+            </span>
+            <Button 
+              onClick={() => updateModalState({ isUserSettingsPopoverOpen: true })}
+              variant="secondary" 
+              style={{ 
+                width: '36px', 
+                height: '36px', 
+                padding: 0, 
+                borderRadius: '50%', 
+                minWidth: 'auto', 
+                fontSize: '14px',
+                fontWeight: '600',
+                backgroundColor: 'var(--color-primary)',
+                color: 'white',
+                border: 'none'
+              }}
+            >
+              {userInfo.initial}
+            </Button>
+          </div>
+        )}
+      </header>
+      
+      <main style={{ 
+        height: 'auto', // Changed from fixed height to auto
+        minHeight: '524px', // Minimum height to maintain layout
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-primary)',
+        overflowY: 'auto', // Allow main container to scroll
+        overflowX: 'hidden'
+      }}>
+
+        {user ? (
+         
+          // This is the main container for the logged-in view
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+            {/* --- NEW TAB NAVIGATION BAR --- */}
+           
+            <div style={{
+              display: 'flex',
+              flexShrink: 0,
+              borderBottom: '1px solid var(--input-border)',
+              padding: '4px 20px 0 20px',
+              backgroundColor: 'var(--bg-secondary)'
+            }}>
+
+              <button 
+                onClick={() => setActiveTab('dashboard')}
+                className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+              >
+                Dashboard
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('protect')}
+                className={`tab-button ${activeTab === 'protect' ? 'active' : ''}`}
+              >
+                Protect
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('vault')}
+                className={`tab-button ${activeTab === 'vault' ? 'active' : ''}`}
+              >
+                Vault
+              </button>  
+
+
+            </div>
+
+
+            {/* --- NEW DYNAMIC TAB CONTENT --- */}
+            <div className="tab-content" style={{ flexGrow: 1, overflowY: 'auto', padding: '20px' }}>
+              {activeTab === 'dashboard' && (
+                <>
+                  
+                  {/* THIS IS YOUR OLD DASHBOARD VIEW, PASTED HERE */}
+                  <div style={{ 
+                      height: '180px', // <-- INCREASED HEIGHT
+                      marginBottom: '20px', 
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                      borderRadius: 'px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--input-border)'
+                  }}>
+                    <PillarCarousel 
+                  title="Price Drops" 
+                  items={filteredPurchases.priceDrops || []} 
+                  />
+                  </div>
+                  <div style={{ 
+                      height: '180px', // <-- INCREASED HEIGHT
+                      marginBottom: '20px', 
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--input-border)'
+                  }}>
+                    <PillarCarousel 
+                  title="Warranty Shield" 
+                  items={filteredPurchases.claimsoAssist || []} 
+                  />
+                  </div>
+                </>
+              )}
+              {activeTab === 'protect' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  {/* For now, we find the first eligible item to show offers for */}
+                  <ProtectPage 
+                      purchase={purchases.find(p => p.postPurchaseType === 'warranty')} 
+                      onSelectPlan={handleSelectPlan}
+                      />
+                </Suspense>
+              )}
+
+              {activeTab === 'vault' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  {/* --- Vault Content --- */}
+                  <PurchaseVault 
+                    items={filteredPurchases.all || []} 
+                    onItemAction={handleVaultItemAction}
+                    emptyMessage="Your purchase vault is empty. Items will appear here after you make a purchase."
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>        ) : (
+          <div style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            padding: '24px',
+            maxWidth: '340px',
+            margin: '0 auto'
+          }}>
+            {/* Status Messages */}
+            {(uiState.authError || uiState.authSuccess) && (
+              <AlertMessage
+                type={uiState.authError ? 'error' : 'success'}
+                message={uiState.authError || uiState.authSuccess}
+                onDismiss={() => updateUiState({ authError: '', authSuccess: '' })}
+              />
+            )}
+
+            {/* Social Login */}
+            <div style={{ width: '100%', marginBottom: '16px' }}>
+              <SocialLogins onGoogleLogin={handleGoogleLogin} disabled={uiState.isLoading} />
+            </div>
+            
+            {/* Divider */}
+            <div style={{ 
+              width: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              margin: '16px 0',
+              gap: '12px'
+            }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--input-border)' }} />
+              <span style={{ 
+                fontSize: '12px', 
+                color: 'var(--text-secondary)',
+                fontWeight: '500'
+              }}>
+                or continue with email
+              </span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--input-border)' }} />
+            </div>
+
+            {/* Forms */}
+            {formState.showForgotPassword ? (
+              <form onSubmit={handleForgotPassword} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                    <h2 style={{ 
+                      margin: '0 0 4px 0', 
+                      fontSize: '22px', 
+                      fontWeight: '700',
+                      color: 'var(--text-primary)'
+                    }}>
+                      Reset Password
+                    </h2>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '13px', 
+                      color: 'var(--text-secondary)' 
+                    }}>
+                      Enter your email to receive a reset link
+                    </p>
+                  </div>
+                  
+                  <ThemedInput
+                    type="email"
+                    placeholder="Email address"
+                    value={formState.email}
+                    onChange={(e) => updateFormState({ email: e.target.value })}
+                    required
+                    disabled={uiState.isLoading}
+                    autoComplete="email"
+                  />
+                  
+                  <Button type="submit" disabled={uiState.isLoading} style={{ width: '100%', height: '42px' }}>
+                    {uiState.isLoading ? 'Sending...' : 'Send Reset Email'}
+                  </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => updateFormState({ showForgotPassword: false })}
+                    disabled={uiState.isLoading}
+                    style={{ width: '100%', height: '42px' }}
+                  >
+                    Back to Login
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={formState.isRegisterView ? handleRegister : handleLogin} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                    <h2 style={{ 
+                      margin: '0 0 4px 0', 
+                      fontSize: '22px', 
+                      fontWeight: '700',
+                      color: 'var(--text-primary)'
+                    }}>
+                      {formState.isRegisterView ? 'Create Account' : 'Welcome Back'}
+                    </h2>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: '13px', 
+                      color: 'var(--text-secondary)' 
+                    }}>
+                      {formState.isRegisterView 
+                        ? 'Start tracking your purchases' 
+                        : 'Sign in to your dashboard'
+                      }
+                    </p>
+                  </div>
+                  
+                  {formState.isRegisterView && (
+                    <ThemedInput
+                      type="text"
+                      placeholder="First name"
+                      value={formState.firstName}
+                      onChange={(e) => updateFormState({ firstName: e.target.value })}
+                      required
+                      disabled={uiState.isLoading}
+                      autoComplete="given-name"
+                    />
+                  )}
+                  
+                  <ThemedInput
+                    type="email"
+                    placeholder="Email address"
+                    value={formState.email}
+                    onChange={(e) => updateFormState({ email: e.target.value })}
+                    required
+                    disabled={uiState.isLoading}
+                    autoComplete="email"
+                  />
+                  
+                  <ThemedInput
+                    type="password"
+                    placeholder="Password"
+                    value={formState.password}
+                    onChange={(e) => updateFormState({ password: e.target.value })}
+                    required
+                    disabled={uiState.isLoading}
+                    autoComplete={formState.isRegisterView ? "new-password" : "current-password"}
+                  />
+                  
+                  <Button type="submit" disabled={uiState.isLoading} style={{ width: '100%', height: '42px' }}>
+                    {uiState.isLoading ? 'Please wait...' : (formState.isRegisterView ? 'Create Account' : 'Sign In')}
+                  </Button>
+                  
+                  {!formState.isRegisterView && (
+                    <button
+                      type="button"
+                      onClick={() => updateFormState({ showForgotPassword: true })}
+                      disabled={uiState.isLoading}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-primary)',
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        textAlign: 'center',
+                        padding: '4px'
+                      }}
+                    >
+                      Forgot your password?
+                    </button>
+                  )}
+                  
+                  <div style={{ textAlign: 'center', paddingTop: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {formState.isRegisterView ? 'Already have an account?' : "Don't have an account?"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        startTransition(() => {
+                          updateFormState({ isRegisterView: !formState.isRegisterView });
+                          updateUiState({ authError: '', authSuccess: '' });
+                        });
+                      }}
+                      disabled={uiState.isLoading}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--color-primary)',
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        marginLeft: '4px',
+                        padding: '2px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      {formState.isRegisterView ? 'Sign in' : 'Create account'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Lazy-loaded Modals with Suspense fallbacks */}
+      {modalState.selectedPurchaseForModal && modalState.isPriceDropModalOpen && (
+        <ModalWrapper 
+          theme={uiState.theme} 
+          isOpen={true} 
+          onClose={() => updateModalState({ isPriceDropModalOpen: false, selectedPurchaseForModal: null })} 
+          title="Price Drop Claim" 
+          customWidth="380px"
+        >
+          <Suspense fallback={<LoadingSpinner />}>
+            <PriceDropAssistModal 
+              purchase={modalState.selectedPurchaseForModal} 
+              onClose={() => updateModalState({ isPriceDropModalOpen: false, selectedPurchaseForModal: null })} 
+            />
+          </Suspense>
+        </ModalWrapper>
+      )}
+      
+      {modalState.selectedPurchaseForModal && modalState.isClaimTypeModalOpen && (
+        <ModalWrapper 
+          theme={uiState.theme} 
+          isOpen={true} 
+          onClose={() => updateModalState({ isClaimTypeModalOpen: false, selectedPurchaseForModal: null })} 
+          title="Claim Type" 
+          customWidth="320px"
+        >
+          <Suspense fallback={<LoadingSpinner />}>
+            <ClaimTypeChoiceModal 
+              purchase={modalState.selectedPurchaseForModal} 
+              onClose={() => updateModalState({ isClaimTypeModalOpen: false, selectedPurchaseForModal: null })} 
+            />
+          </Suspense>
+        </ModalWrapper>
+      )}
+      
+      <Popover 
+        theme={uiState.theme} 
+        isOpen={modalState.isUserSettingsPopoverOpen} 
+        onClose={() => updateModalState({ isUserSettingsPopoverOpen: false })}
+      >
+        <Suspense fallback={<LoadingSpinner />}>
+          <UserSettings 
+            userEmail={user?.email} 
+            onLogout={logout} 
+            onToggleTheme={handleToggleTheme} 
+            currentTheme={uiState.theme} 
+            isCalendarSynced={isCalendarSynced} 
+            onCalendarSyncToggle={handleCalendarSyncToggle} 
+            onOpenDeleteConfirm={() => {
+              updateModalState({ 
+                isUserSettingsPopoverOpen: false, 
+                isDeleteConfirmModalOpen: true 
+              });
+            }}
+          />
+        </Suspense>
+      </Popover>
+      
+      {modalState.isDeleteConfirmModalOpen && createPortal(
+        <ModalWrapper 
+          isOpen={true} 
+          onClose={() => updateModalState({ isDeleteConfirmModalOpen: false })} 
+          title="Delete Calendar Alerts?" 
+          theme={uiState.theme} 
+          customWidth="380px"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--alert-error-bg)',
+                border: '2px solid var(--alert-error-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 12px auto',
+                fontSize: '20px'
+              }}>
+                ⚠️
+              </div>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '14px', 
+                color: 'var(--text-primary)',
+                fontWeight: '500',
+                lineHeight: '1.4'
+              }}>
+                This will permanently delete all calendar alerts and sync settings. This action cannot be undone.
+              </p>
+            </div>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <Button 
+                onClick={() => updateModalState({ isDeleteConfirmModalOpen: false })} 
+                variant="secondary"
+                style={{ minWidth: '80px', height: '36px' }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  updateModalState({ isDeleteConfirmModalOpen: false });
+                  setIsCalendarSynced(false);
+                  localStorage.setItem('claimso-calendar-synced', 'false');
+                  updateUiState({ authSuccess: "Calendar alerts deleted successfully." });
+                }} 
+                variant="danger"
+                style={{ minWidth: '80px', height: '36px' }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </ModalWrapper>,
+        document.body
+      )}
+{modalState.selectedPurchaseForModal && modalState.isMissingInfoModalOpen && (
+        <Suspense fallback={<LoadingSpinner />}>
+          <MissingInfoModal
+            isOpen={true}
+            onClose={() => updateModalState({ isMissingInfoModalOpen: false, selectedPurchaseForModal: null })}
+            purchase={modalState.selectedPurchaseForModal}
+            onSave={(purchaseId, data) => {
+              if (user?.uid) {
+                updatePurchase(user.uid, purchaseId, data);
+              }
+            }}
+          />
+        </Suspense>
+      )}
+        {/* --- Archive Purchase Modal --- */}
+        {modalState.selectedPurchaseForModal && modalState.isArchiveModalOpen && (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ArchivePurchaseModal
+              isOpen={true}
+              onClose={() => updateModalState({ isArchiveModalOpen: false, selectedPurchaseForModal: null })}
+              purchase={modalState.selectedPurchaseForModal}
+              onConfirm={async (reason) => {
+                const purchaseToArchive = modalState.selectedPurchaseForModal;
+                updateModalState({ isArchiveModalOpen: false, selectedPurchaseForModal: null });
+                updateUiState({ isLoading: true, authSuccess: '', authError: '' });
+                try {
+                  const { archivePurchaseInService } = await import('./services/firebase-enhanced-global.js');
+                  await archivePurchaseInService(purchaseToArchive.id, reason);
+                  updateUiState({ isLoading: false, authSuccess: 'Purchase successfully archived!' });
+                } catch (error) {
+                  updateUiState({ isLoading: false, authError: 'Could not archive purchase.' });
+                }
+              }}
+            />
+          </Suspense>
+        )}
+
+        {/* --- Checkout Modal --- */}
+        {isCheckoutModalOpen && selectedPlan && (
+          <Suspense fallback={<LoadingSpinner />}>
+              <CheckoutModal
+                  isOpen={true}
+                  onClose={() => { setIsCheckoutModalOpen(false); setSelectedPlan(null); }}
+                  plan={selectedPlan}
+                  // We need to get the purchase that these offers are for.
+                  // A simple way for now is to find it again.
+                  purchase={purchases.find(p => p.postPurchaseType === 'warranty')}
+              />
+          </Suspense>
+        )}
+
+
+
+
+
+      {/* Optimized CSS for ultra-smooth performance with refined shadows and light pulsating borders */}
+      <style jsx>{`
+        @keyframes spinO {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes accordionPulse {
+          0% { 
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(59, 130, 246, 0.2);
+          }
+          50% { 
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.4);
+            transform: scale(1.002);
+          }
+          100% { 
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(59, 130, 246, 0.2);
+          }
+        }
+        
+        /* Enhanced pulse effect for dark mode with lighter colors */
+        [data-theme="dark"] .accordion-pulse {
+          animation: accordionPulseDark 3s ease-in-out infinite;
+        }
+        
+        @keyframes accordionPulseDark {
+          0% { 
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.25);
+          }
+          50% { 
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.5);
+            transform: scale(1.003);
+          }
+          100% { 
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.25);
+          }
+        }
+        
+        /* Light-mode pulse (red) */
+@keyframes accordionPulseLight {
+          0% { 
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.25);
+          }
+          50% { 
+            border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.5);
+            transform: scale(1.003);
+          }
+          100% { 
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.25);
+          }
+        }
+
+/* Light theme uses the red pulse */
+[data-theme="light"] .accordion-pulse {
+  animation: accordionPulseLight 3s ease-in-out infinite;
+}
+
+/* Dark theme keeps the blue pulse */
+[data-theme="dark"] .accordion-pulse {
+  animation: accordionPulseDark 3s ease-in-out infinite;
+}
+        /* Optimize viewport for performance */
+        .viewport-container {
+          will-change: transform;
+          contain: layout style paint;
+          transform: translateZ(0);
+        }
+        
+        /* Smooth transitions with hardware acceleration */
+        * {
+          transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+        }
+        
+        /* Optimize button interactions */
+        button {
+          transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+          will-change: transform;
+        }
+        
+        button:hover:not(:disabled) {
+          transform: translateY(-1px);
+        }
+        
+        button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+        
+        /* Enhanced input focus with better performance */
+        input {
+          will-change: border-color;
+        }
+        
+        input:focus {
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+        
+        /* Optimized scrolling with better visibility */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: var(--bg-secondary);
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: var(--input-border);
+          border-radius: 4px;
+          border: 1px solid var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: var(--text-secondary);
+        }
+        
+        /* Optimize text rendering */
+        body {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+        }
+        
+        /* Performance optimizations for scrollable areas */
+        [style*="overflow-y: auto"] {
+          -webkit-overflow-scrolling: touch;
+          transform: translateZ(0);
+          will-change: scroll-position;
+        }
+        
+        /* Reduce layout thrashing with better containment */
+        main {
+          contain: layout style;
+        }
+        
+        /* Optimize modal animations */
+        [role="dialog"] {
+          will-change: opacity, transform;
+        }
+        
+        /* Ensure no overlap with proper z-index stacking and contained shadows */
+        .accordion-pulse {
+          position: relative;
+          z-index: 1;
+          margin: 0; /* Remove any margin that might cause shadows to overlap */
+        }
+        
+        /* Enhanced visual separation between sections with contained shadows */
+        .viewport-container > main > div > div {
+          isolation: isolate;
+        }
+        
+        /* Ensure perfect 20px spacing between sections */
+        .viewport-container > main > div > div:not(:last-child) {
+          margin-bottom: 20px !important;
+        }
+        
+        /* Last section (Purchase Vault) has no bottom margin - container padding handles bottom space */
+        .viewport-container > main > div > div:last-child {
+          margin-bottom: 0 !important;
+        }
+        
+        /* Smooth accordion expansion/collapse */
+        .accordion-pulse > * {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Ensure shadows don't extend beyond containers and perfect spacing is maintained */
+        .viewport-container > main > div {
+          overflow: visible; /* Allow shadows to show but contained within spacing */
+        }
+        
+        /* Light mode shadow refinements */
+        [data-theme="light"] .viewport-container > main > div > div {
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+        }
+        
+        /* Dark mode shadow refinements */
+        [data-theme="dark"] .viewport-container > main > div > div {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+        .tab-button {
+          padding: 12px 16px;
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          position: relative;
+          transition: color 0.2s ease;
+        }
+        .tab-button:hover {
+          color: var(--text-primary);
+        }
+        .tab-button.active {
+          color: var(--text-primary);
+        }
+        .tab-button.active::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background-color: var(--color-primary);
+        }
+        .tab-content {
+          /* Add any styling for the content area if needed */
+        }
+      `}</style>
+       <DebugPanel />
+    </div>
+    );
+    }
+export default App;

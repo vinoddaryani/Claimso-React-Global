@@ -1,0 +1,150 @@
+// src/utils/helpers.js
+
+/**
+ * Copies text to the user's clipboard.
+ * @param {string} text - The text to copy.
+ * @returns {Promise<boolean>} Resolves to true if successful, false otherwise.
+ */
+export const copyToClipboard = async (text) => {
+  if (!navigator.clipboard) {
+    console.warn("Clipboard API not available.");
+    // Fallback for older browsers
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; // Avoid scrolling to bottom
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      console.log('Text copied to clipboard (fallback).');
+      document.body.removeChild(textArea);
+      return true;
+    } catch (err) {
+      console.error('Unable to copy text (fallback):', err);
+      document.body.removeChild(textArea);
+      return false;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    console.log('Text copied to clipboard (Clipboard API).');
+    return true;
+  } catch (err) {
+    console.error('Failed to copy text (Clipboard API):', err);
+    return false;
+  }
+};
+
+/**
+ * Generates a retailer's support chat link for MVP scope.
+ * @param {string} retailer - The retailer's name.
+ * @returns {string} The direct chat URL or a Google search link for support.
+ */
+export const getChatLink = (retailer) => {
+  const normalizedRetailer = retailer?.toLowerCase();
+  switch (normalizedRetailer) {
+    case 'amazon':
+      return 'https://www.amazon.com/gp/help/customer/contact-us'; // Generic Amazon Contact Us
+    case 'amazon.in':
+      return 'https://www.amazon.in/gp/help/customer/contact-us'; // Generic Amazon India Contact Us
+    // Add more specific retailer chat links here if needed later
+    default:
+      // Fallback to Google search for general support
+      return `https://www.google.com/search?q=${encodeURIComponent(retailer)} customer support chat`;
+  }
+};
+
+/**
+ * Generates a Google search link for a given query.
+ * @param {string} query - The search query.
+ * @returns {string} The Google search URL.
+ */
+export const generateGoogleSearchLink = (query) => {
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+};
+
+/**
+ * Safely opens a URL in a new window/tab.
+ * Important for Chrome Extensions for security.
+ * @param {string} url - The URL to open.
+ */
+export const openExternalLink = (url) => {
+  // Use chrome.tabs.create for Chrome extensions, window.open for regular web
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url: url, active: true });
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+/**
+ * Intelligently extracts a capitalized first name from a user object.
+ * It checks for a 'firstName', then 'displayName', and finally parses the email.
+ * @param {object | null} user - The user object from Firebase Auth/Firestore.
+ * @returns {string} The formatted first name or "User" as a fallback.
+ */
+export const getUserFirstName = (user) => {
+  if (!user) {
+    return "User";
+  }
+
+  // 1. Use the 'firstName' field from your Firestore document (Highest Priority)
+  if (user.firstName && typeof user.firstName === 'string' && user.firstName.trim()) {
+    const firstName = user.firstName.trim();
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  }
+
+  // 2. Use the 'displayName' from Google Auth if available
+  if (user.displayName && typeof user.displayName === 'string' && user.displayName.trim()) {
+    const displayName = user.displayName.trim();
+    const nameParts = displayName.split(' '); // "Vinod Daryani" -> ["Vinod", "Daryani"]
+    const firstName = nameParts[0];
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  }
+
+  // 3. Fallback to parsing the email address
+  if (user.email && typeof user.email === 'string' && user.email.trim()) {
+    const email = user.email.trim();
+    // Get the part before the '@' symbol
+    let localPart = email.split('@')[0];
+    // Remove numbers and symbols, and split by common separators
+    localPart = localPart.replace(/[^a-zA-Z\.\_\-]/g, ''); 
+    const nameParts = localPart.split(/[\.\_\-]/); // "vinod.daryani" -> ["vinod", "daryani"]
+    const firstName = nameParts[0];
+
+    if (firstName) {
+        return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+    }
+  }
+
+  // 4. If all else fails, return a generic greeting
+  return "User";
+};
+/**
+ * Constructs the Google OAuth consent screen URL.
+ * @param {string} clientId - The Google OAuth Client ID for your web application.
+ * @returns {string} The full URL for initiating the globalClient.auth flow.
+ */
+export const getGoogleOAuthUrl = (clientId) => {
+  const rootUrl = "https://accounts.google.com/o/oauth2/v2/globalClient.auth";
+
+  const options = {
+    redirect_uri: `https://[YOUR_EXTENSION_ID].chromiumapp.org/`,
+    client_id: clientId,
+    access_type: "offline", // Required to get a refresh token
+    response_type: "code",
+    prompt: "consent", // Ensures the user is re-prompted for consent and a refresh token is issued
+    scope: "https://www.googleapis.com/globalClient.auth/calendar.events",
+  };
+
+  const qs = new URLSearchParams(options);
+  return `${rootUrl}?${qs.toString()}`;
+};
+
+// --- REGION-AWARE FUNCTIONS ---
+export const getUserRegion = () => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone.includes('Asia/Kolkata')) return 'IN';
+    if (timezone.includes('Asia/Dubai') || timezone.includes('Asia/Riyadh')) return 'AE';
+    return 'US'; // Default
+};
