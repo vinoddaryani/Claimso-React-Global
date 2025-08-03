@@ -1031,6 +1031,28 @@ const { FieldValue } = require('firebase-admin/firestore');
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Functions from our new, modular files
 exports.searchProtectionPlans = searchFunctions.searchProtectionPlans;
 exports.addToWishlist = searchFunctions.addToWishlist;

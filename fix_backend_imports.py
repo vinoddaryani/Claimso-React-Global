@@ -13,13 +13,13 @@ FUNCTIONS_DIR = os.path.join('shared', 'functions')
 # The script will add the 'import_statement' if 'detection_regex' is found AND
 # 'import_statement' is NOT already in the file.
 REQUIRED_IMPORTS = {
-"FieldValue": {
-    "statement": "const { FieldValue } = require('firebase-admin/firestore');",
+#"FieldValue": {
+ #   "statement": "const { FieldValue } = require('firebase-admin/firestore');",
     # Only detect FieldValue when it's used with a property (e.g., FieldValue.serverTimestamp())
     # or in a way that suggests it's not just a standalone variable in an outer scope.
-    "regex": re.compile(r"\bFieldValue\.(serverTimestamp|arrayUnion|arrayRemove|delete)\b"),
-    "order_hint": "admin.initializeApp()"
-},
+  #  "regex": re.compile(r"\bFieldValue\.(serverTimestamp|arrayUnion|arrayRemove|delete)\b"),
+   # "order_hint": "admin.initializeApp()"
+#},
     "Stripe": {
         "statement": "const Stripe = require('stripe');",
         "regex": re.compile(r"\bStripe(?!\.|\w)"), # <-- COMPILED REGEX

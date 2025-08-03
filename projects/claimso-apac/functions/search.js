@@ -63,6 +63,28 @@ const { FieldValue } = require('firebase-admin/firestore');
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const db = getFirestore();
 
 // --- PRODUCT CATEGORY DETECTION LOGIC ---

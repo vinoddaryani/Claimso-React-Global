@@ -66,6 +66,26 @@ const { FieldValue } = require('firebase-admin/firestore');
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // This function needs access to the main Firestore instance, initialized in index.js
 const db = getFirestore();
 // This should be initialized in index.js and passed, but for simplicity, we re-define here.

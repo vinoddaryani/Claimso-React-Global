@@ -73,6 +73,20 @@ const { FieldValue } = require('firebase-admin/firestore');
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // --- INITIALIZATION ---
 // NOTE: We assume 'db' is initialized in the main index.js and accessible.
 // For a modular approach, we get the instance again.
