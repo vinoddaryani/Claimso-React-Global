@@ -5,9 +5,6 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { fetchAndAggregateQuotes } = require('./utils/resilience.js');
 
 
-const { FieldValue } = require('firebase-admin/firestore');
-
-
 
 
 

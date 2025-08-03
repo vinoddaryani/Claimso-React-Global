@@ -2,6 +2,21 @@
 const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+let secretClient;
+
+function getSecretClient() {
+    if (!secretClient) {
+        try {
+            secretClient = new SecretManagerServiceClient();
+        } catch (e) {
+            console.error("Failed to initialize SecretManagerServiceClient:", e);
+            // Handle or re-throw, depending on your error strategy
+            throw new Error("Secret Manager client initialization failed.");
+        }
+    }
+    return secretClient;
+}
+
 const axios = require('axios');
 
 // Safety check - ensure Firebase is initialized

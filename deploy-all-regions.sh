@@ -30,6 +30,17 @@ echo "STEP 1: Building the frontend application..."
 (cd shared/frontend && npm install && npm run build)
 
 echo ""
+echo "STEP 1a: Preparing frontend for deployment..."
+regions=("claimso-us" "claimso-europe" "claimso-apac")
+for region in "${regions[@]}"; do
+    echo "Preparing frontend for $region..."
+    # Remove any existing 'public' directory
+    rm -rf "projects/$region/public"
+    # Copy the built frontend into the project's 'public' folder
+    cp -r "shared/frontend/dist" "projects/$region/public"
+done
+
+echo ""
 echo "STEP 2: Preparing functions for deployment (Aggressive Clean Install)..."
 regions=("claimso-us" "claimso-europe" "claimso-apac")
 for region in "${regions[@]}"; do
@@ -38,7 +49,7 @@ for region in "${regions[@]}"; do
     cp -r "shared/functions" "projects/$region/functions"
     
     echo "Installing dependencies for functions in projects/$region/functions (npm ci)..."
-    (cd "projects/$region/functions" && rm -rf node_modules && npm ci)
+    (cd "projects/$region/functions" && rm -rf node_modules && npm install)
 done
 
 echo ""

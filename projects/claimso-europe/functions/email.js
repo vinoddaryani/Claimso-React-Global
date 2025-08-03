@@ -23,8 +23,6 @@ exports.sendTransactionalEmail = async (to, templateId, dynamicData, logData) =>
     // const sgMail = require('@sendgrid/mail');
 
 
-const { FieldValue } = require('firebase-admin/firestore');
-
 
 
 

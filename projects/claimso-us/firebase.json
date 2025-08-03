@@ -11,6 +11,7 @@
        "source": "functions",
       "codebase": "default",
         "runtime": "nodejs20",
+         "timeoutSeconds": 60,
       "ignore": [
         "node_modules",
         ".git",
@@ -24,7 +25,7 @@
     }
   ],
   "hosting": {
-    "public": "../../shared/frontend/dist",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",

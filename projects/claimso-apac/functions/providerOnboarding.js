@@ -8,8 +8,6 @@ const Stripe = require('stripe');
 const crypto = require('crypto');
 
 
-const { FieldValue } = require('firebase-admin/firestore');
-
 
 
 

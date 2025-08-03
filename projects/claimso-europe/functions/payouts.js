@@ -7,8 +7,6 @@ const { defineSecret } = require('firebase-functions/params');
 const Stripe = require('stripe');
 
 
-const { FieldValue } = require('firebase-admin/firestore');
-
 
 
 
