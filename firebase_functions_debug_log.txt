@@ -1,0 +1,66 @@
+Running node v20.19.4 (npm v10.8.2)
+[2025-08-03T05:30:42.274Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2025-08-03T05:30:42.275Z] > authorizing via signed-in user (vinoddaryani@gmail.com)
+[2025-08-03T05:30:42.275Z] [iam] checking project us for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[2025-08-03T05:30:42.276Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:42.276Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:42.277Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/us:testIamPermissions [none]
+[2025-08-03T05:30:42.277Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/us:testIamPermissions x-goog-quota-user=projects/us
+[2025-08-03T05:30:42.277Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/us:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2025-08-03T05:30:44.024Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/us:testIamPermissions 200
+[2025-08-03T05:30:44.024Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/us:testIamPermissions {}
+[2025-08-03T05:30:44.025Z] [iam] error while checking permissions, command may fail: Authorization failed. This account is missing the following required permissions on project us:
+
+  cloudfunctions.functions.create
+  cloudfunctions.functions.delete
+  cloudfunctions.functions.get
+  cloudfunctions.functions.list
+  cloudfunctions.functions.update
+  cloudfunctions.operations.get
+  firebase.projects.get
+[2025-08-03T05:30:44.025Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:44.025Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:44.025Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions [none]
+[2025-08-03T05:30:44.025Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[2025-08-03T05:30:45.858Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions 404
+[2025-08-03T05:30:45.858Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[2025-08-03T05:30:45.859Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/us/serviceAccounts/us@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account","status":404}
+
+=== Deploying to 'us'...
+
+i  deploying functions 
+Running command: npm --prefix "../../shared/functions" install
+
+added 1 package, and audited 586 packages in 1s
+
+86 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+✔  functions: Finished running predeploy script. 
+[2025-08-03T05:30:47.318Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:47.318Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:47.318Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/us/services/cloudresourcemanager.googleapis.com [none]
+[2025-08-03T05:30:47.318Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/us/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/us
+[2025-08-03T05:30:49.172Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/us/services/cloudresourcemanager.googleapis.com 403
+[2025-08-03T05:30:49.172Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/us/services/cloudresourcemanager.googleapis.com [omitted]
+[2025-08-03T05:30:49.173Z] Unable to check that https://cloudresourcemanager.googleapis.com is enabled on us. Calls to it will fail if it is not enabled
+[2025-08-03T05:30:49.173Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:49.173Z] Checked if tokens are valid: true, expires at: 1754202621762
+[2025-08-03T05:30:49.173Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/us [none]
+[2025-08-03T05:30:50.872Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/us 403
+[2025-08-03T05:30:50.872Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/us {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+
+Error: Request to https://cloudresourcemanager.googleapis.com/v1/projects/us had HTTP Error: 403, The caller does not have permission
+[2025-08-03T05:30:50.874Z] Error Context: {
+  "body": {
+    "error": {
+      "code": 403,
+      "message": "The caller does not have permission",
+      "status": "PERMISSION_DENIED"
+    }
+  },
+  "response": {
+    "statusCode": 403
+  }
+}

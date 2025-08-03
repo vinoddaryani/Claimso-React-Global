@@ -1,10 +1,9 @@
 // functions/email.js -- NEW FILE: Transactional Email Service
 
-const {getFirestore, FieldValue} = require("firebase-admin/firestore");
-const {defineSecret} = require("firebase-functions/params");
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { defineSecret } = require('firebase-functions/params');
 
 const db = getFirestore();
-
 
 // --- CORE EMAIL SENDING UTILITY ---
 
@@ -18,10 +17,77 @@ const db = getFirestore();
 exports.sendTransactionalEmail = async (to, templateId, dynamicData, logData) => {
   try {
     console.log(`Sending email to ${to} with template ${templateId}`);
-    console.log("Dynamic data:", dynamicData);
+    console.log('Dynamic data:', dynamicData);
 
     // Placeholder for actual SendGrid integration
     // const sgMail = require('@sendgrid/mail');
+
+
+const { FieldValue } = require('firebase-admin/firestore');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     //
     // const msg = {
@@ -34,23 +100,23 @@ exports.sendTransactionalEmail = async (to, templateId, dynamicData, logData) =>
     // await sgMail.send(msg);
 
     // Log the email for tracking
-    await db.collection("email_logs").add({
+    await db.collection('email_logs').add({
       to,
       templateId,
-      status: "sent", // In real implementation: "sent" | "failed"
+      status: 'sent', // In real implementation: "sent" | "failed"
       sentAt: FieldValue.serverTimestamp(),
       ...logData,
     });
 
-    return {success: true};
+    return { success: true };
   } catch (error) {
-    console.error("Email sending failed:", error);
+    console.error('Email sending failed:', error);
 
     // Log the failure
-    await db.collection("email_logs").add({
+    await db.collection('email_logs').add({
       to,
       templateId,
-      status: "failed",
+      status: 'failed',
       error: error.message,
       sentAt: FieldValue.serverTimestamp(),
       ...logData,

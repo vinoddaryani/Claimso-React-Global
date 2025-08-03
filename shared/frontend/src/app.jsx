@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import useAuth from './hooks/useAuth';
 import usePurchases from './hooks/usePurchases';
 import DebugPanel from './components/DebugPanel';
+import { paymentProcessor } from './services/payment.js';
 
 
 // Lazy load heavy components
@@ -27,24 +28,25 @@ import Popover from './components/Popover';
 import Accordion from './components/Accordion';
 import SocialLogins from './components/SocialLogins';
 
+// This is the correct replacement.
+// 1. Import the official auth functions directly from the firebase/auth library
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithPopup,
   sendPasswordResetEmail 
-} from 'firebase/globalClient.auth';
+} from 'firebase/auth';
+
+// 2. Import our own global client to get the auth instance
+import { globalClient } from './services/firebase-enhanced-global.js';
 
 // Consolidated Firebase Service Imports
-import { 
-  globalClient.updatePurchase,
-  // You might need to add other functions you use from here
-} from './services/firebase-enhanced-global.js'; 
-import { createCheckoutSession } from './services/firebase-enhanced-global.js';
+import { updatePurchase } from './services/firebase-enhanced-global.js';
 import { updateUserSyncPreference } from './services/firebase-enhanced-global.js';
 // Consolidated Helper Imports
 import { 
-  getUserFirstName, 
+  getUserFirstName,
   openExternalLink,
   getGoogleOAuthUrl
 } from './utils/helpers';
@@ -290,122 +292,146 @@ const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
     });
   }, [updateFormState, updateUiState]);
 
-  // Optimized globalClient.auth handlers with better error handling
-  const handleLogin = useCallback(async (e) => {
-    e.preventDefault();
-    
-    if (!validateEmail(formState.email)) {
-      updateUiState({ authError: 'Please enter a valid email address' });
-      return;
-    }
-    
-    if (!validatePassword(formState.password)) {
-      updateUiState({ authError: 'Password must be at least 6 characters' });
-      return;
-    }
+ const handleLogin = useCallback(async (e) => {
+  e.preventDefault();
+  
+  if (!validateEmail(formState.email)) {
+    updateUiState({ authError: 'Please enter a valid email address' });
+    return;
+  }
+  
+  if (!validatePassword(formState.password)) {
+    updateUiState({ authError: 'Password must be at least 6 characters' });
+    return;
+  }
 
-    updateUiState({ isLoading: true, authError: '' });
-    
-    try {
-      await signInWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
-      updateUiState({ authSuccess: 'Welcome back!' });
-      clearForms();
-    } catch (error) {
-      const errorMessages = {
-        'globalClient.auth/user-not-found': 'No account found with this email',
-        'globalClient.auth/wrong-password': 'Incorrect password',
-        'globalClient.auth/too-many-requests': 'Too many attempts. Try again later',
-        'globalClient.auth/user-disabled': 'Account disabled'
-      };
-      updateUiState({ 
-        authError: errorMessages[error.code] || 'Login failed. Please try again' 
-      });
-    } finally {
-      updateUiState({ isLoading: false });
-    }
-  }, [formState.email, formState.password, validateEmail, validatePassword, updateUiState, clearForms]);
+  updateUiState({ isLoading: true, authError: '' });
+  
+  try {
+    await signInWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
+    updateUiState({ authSuccess: 'Welcome back!' });
+    clearForms();
+  } catch (error) {
+    const errorMessages = {
+      'auth/user-not-found': 'No account found with this email',
+      'auth/wrong-password': 'Incorrect password',
+      'auth/too-many-requests': 'Too many attempts. Try again later',
+      'auth/user-disabled': 'Account disabled'
+    };
+    updateUiState({ 
+      authError: errorMessages[error.code] || 'Login failed. Please try again' 
+    });
+  } finally {
+    updateUiState({ isLoading: false });
+  }
+}, [formState.email, formState.password, validateEmail, validatePassword, updateUiState, clearForms]);
 
-  const handleRegister = useCallback(async (e) => {
-    e.preventDefault();
-    
-    if (!formState.firstName.trim()) {
-      updateUiState({ authError: 'Please enter your first name' });
-      return;
-    }
-    
-    if (!validateEmail(formState.email)) {
-      updateUiState({ authError: 'Please enter a valid email address' });
-      return;
-    }
-    
-    if (!validatePassword(formState.password)) {
-      updateUiState({ authError: 'Password must be at least 6 characters' });
-      return;
-    }
+const handleRegister = useCallback(async (e) => {
+  e.preventDefault();
+  
+  if (!formState.firstName.trim()) {
+    updateUiState({ authError: 'Please enter your first name' });
+    return;
+  }
+  
+  if (!validateEmail(formState.email)) {
+    updateUiState({ authError: 'Please enter a valid email address' });
+    return;
+  }
+  
+  if (!validatePassword(formState.password)) {
+    updateUiState({ authError: 'Password must be at least 6 characters' });
+    return;
+  }
 
-    updateUiState({ isLoading: true, authError: '' });
-    
-    try {
-      const cred = await createUserWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
-      await saveUserFirstName(cred.user.uid, formState.firstName);
-      await refetchUserData();
-      updateUiState({ authSuccess: 'Account created successfully!' });
-      clearForms();
-    } catch (error) {
-      const errorMessages = {
-        'globalClient.auth/email-already-in-use': 'Account with this email already exists',
-        'globalClient.auth/weak-password': 'Password is too weak'
-      };
-      updateUiState({ 
-        authError: errorMessages[error.code] || 'Registration failed. Please try again' 
-      });
-    } finally {
-      updateUiState({ isLoading: false });
+  updateUiState({ isLoading: true, authError: '' });
+  
+  try {
+    const cred = await createUserWithEmailAndPassword(globalClient.auth, formState.email, formState.password);
+    await saveUserFirstName(cred.user.uid, formState.firstName);
+    await refetchUserData();
+    updateUiState({ authSuccess: 'Account created successfully!' });
+    clearForms();
+  } catch (error) {
+    const errorMessages = {
+      'auth/email-already-in-use': 'Account with this email already exists',
+      'auth/weak-password': 'Password is too weak'
+    };
+    updateUiState({ 
+      authError: errorMessages[error.code] || 'Registration failed. Please try again' 
+    });
+  } finally {
+    updateUiState({ isLoading: false });
+  }
+}, [formState, validateEmail, validatePassword, updateUiState, clearForms, refetchUserData]);
+
+const handleGoogleLogin = useCallback(async () => {
+  updateUiState({ isLoading: true, authError: '' });
+  
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(globalClient.auth, provider);
+    updateUiState({ authSuccess: 'Google login successful!' });
+    clearForms();
+  } catch (error) {
+    if (error.code !== 'auth/popup-closed-by-user') {
+      updateUiState({ authError: 'Google login failed. Please try again' });
     }
-  }, [formState, validateEmail, validatePassword, updateUiState, clearForms, refetchUserData]);
+  } finally {
+    updateUiState({ isLoading: false });
+  }
+}, [updateUiState, clearForms]);
 
-  const handleGoogleLogin = useCallback(async () => {
-    updateUiState({ isLoading: true, authError: '' });
+const handleForgotPassword = useCallback(async (e) => {
+  e.preventDefault();
+  
+  if (!validateEmail(formState.email)) {
+    updateUiState({ authError: 'Please enter a valid email address' });
+    return;
+  }
+
+  updateUiState({ isLoading: true, authError: '' });
+  
+  try {
+    await sendPasswordResetEmail(globalClient.auth, formState.email);
+    updateUiState({ authSuccess: 'Password reset email sent!' });
+    updateFormState({ showForgotPassword: false });
+  } catch (error) {
+    const errorMessage = error.code === 'auth/user-not-found' 
+      ? 'No account found with this email'
+      : 'Failed to send reset email';
+    updateUiState({ authError: errorMessage });
+  } finally {
+    updateUiState({ isLoading: false });
+  }
+}, [formState.email, validateEmail, updateUiState, updateFormState]);
+
+const handleSelectPlan = useCallback(async (purchase, plan) => {
+  updateUiState({ isLoading: true, authError: '' });
+
+  const planData = {
+    ...plan,
+    purchaseId: purchase.id,
+    purchaseName: purchase.name
+  };
+
+  try {
+    // Correctly use the imported paymentProcessor
+    const { url } = await paymentProcessor.createCheckoutSession(planData);
     
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(globalClient.auth, provider);
-      updateUiState({ authSuccess: 'Google login successful!' });
-      clearForms();
-    } catch (error) {
-      if (error.code !== 'globalClient.auth/popup-closed-by-user') {
-        updateUiState({ authError: 'Google login failed. Please try again' });
-      }
-    } finally {
-      updateUiState({ isLoading: false });
-    }
-  }, [updateUiState, clearForms]);
+    // Redirect the user to the secure Stripe-hosted page
+    window.location.href = url;
 
-  const handleForgotPassword = useCallback(async (e) => {
-    e.preventDefault();
-    
-    if (!validateEmail(formState.email)) {
-      updateUiState({ authError: 'Please enter a valid email address' });
-      return;
-    }
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    updateUiState({ 
+      isLoading: false, 
+      authError: "Could not connect to secure checkout. Please try again." 
+    });
+  }
+}, [paymentProcessor, updateUiState]); // Correct dependencies
 
-    updateUiState({ isLoading: true, authError: '' });
-    
-    try {
-      await sendPasswordResetEmail(globalClient.auth, formState.email);
-      updateUiState({ authSuccess: 'Password reset email sent!' });
-      updateFormState({ showForgotPassword: false });
-    } catch (error) {
-      const errorMessage = error.code === 'globalClient.auth/user-not-found' 
-        ? 'No account found with this email'
-        : 'Failed to send reset email';
-      updateUiState({ authError: errorMessage });
-    } finally {
-      updateUiState({ isLoading: false });
-    }
-  }, [formState.email, validateEmail, updateUiState, updateFormState]);
-
-
+// --- END OF THE NEW FUNCTION ---
 
   // App handlers (memoized)
   const handleToggleTheme = useCallback(() => {
@@ -688,10 +714,10 @@ const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
               {activeTab === 'protect' && (
                 <Suspense fallback={<LoadingSpinner />}>
                   {/* For now, we find the first eligible item to show offers for */}
-                  <ProtectPage 
-                      purchase={purchases.find(p => p.postPurchaseType === 'warranty')} 
-                      onSelectPlan={handleSelectPlan}
-                      />
+<ProtectPage 
+    purchase={purchases.find(p => p.postPurchaseType === 'warranty')} 
+    onSelectPlan={handleSelectPlan} 
+/>
                 </Suspense>
               )}
 

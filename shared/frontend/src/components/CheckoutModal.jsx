@@ -13,72 +13,69 @@ const CheckoutModal = ({ isOpen, onClose, plan, purchase }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
 
-// REPLACE the entire handleSubmit function in CheckoutModal.jsx with this version
+// --- PASTE THIS NEW, CORRECTED VERSION INTO CHECKOUTMODAL.JSX ---
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!stripe || !elements) {
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  if (!stripe || !elements) {
+    return;
+  }
+  
+  setIsProcessing(true);
+  setError(null);
+
+  try {
+    // Step 1: Create the Payment Intent. This part was already correct.
+    const { clientSecret } = await paymentProcessor.createPaymentIntent({
+      amount: plan.price,
+      currency: plan.currency,
+      purchaseId: purchase.id,
+      planId: plan.partnerId,
+      customerRegion: getUserRegion()
+    });
+
+    // Step 2: Confirm the card payment with Stripe.
+    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card: elements.getElement(CardElement),
+        billing_details: { name: purchase.customerName || 'Valued Customer' }, // Use real data if available
+      },
+    });
+
+    if (stripeError) {
+      setError(stripeError.message || "An error occurred during payment.");
+      setIsProcessing(false);
       return;
     }
-    
-    setIsProcessing(true);
-    setError(null);
 
-    // --- Outer try...catch for the entire process ---
-    try {
-      // Step 1: Call our backend
-      const { clientSecret } = await paymentProcessor.createPaymentIntent({
-        amount: plan.price,
-        currency: plan.currency,
-        purchaseId: purchase.id,
-        planId: plan.partnerId,
-        customerRegion: getUserRegion() // We'll need to import or define getUserRegion
-      });
-
-      // Step 2: Confirm the payment
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: { name: 'Jenny Rosen' }, // Placeholder
-        },
-      });
-
-      if (stripeError) {
-        setError(stripeError.message);
-        setIsProcessing(false);
-        return; // Exit if card is declined, etc.
-      }
-
-      // Step 3: Handle successful payment
-      if (paymentIntent.status === 'succeeded') {
+    // Step 3: Handle the successful payment by fulfilling the purchase.
+    if (paymentIntent.status === 'succeeded') {
+      try {
+        // THIS IS THE FIX: Call the method on our existing paymentProcessor instance.
+        await paymentProcessor.finalizeWarrantyPurchase(purchase.id, plan, paymentIntent.id);
         
-        // --- Inner try...catch specifically for fulfillment ---
-        try {
-          setIsProcessing(true); // Keep processing state for fulfillment
-          const { finalizeWarrantyPurchase } = await import('../services/firebase-enhanced-global.js');
-          await finalizeWarrantyPurchase(purchase.id, plan, paymentIntent.id);
-          
-          alert("Protection plan activated successfully!");
-          onClose(); // Close modal on complete success
+        // Use a more robust success notification if possible, but alert is fine for now.
+        alert("Protection plan activated successfully!");
+        onClose(); // Close modal on complete success
 
-        } catch (fulfillmentError) {
-          // This catch handles ONLY fulfillment errors
-          console.error("Fulfillment Error:", fulfillmentError);
-          setError("Your payment was successful, but we couldn't activate your plan. Please contact support.");
-        }
-        // --- End of inner try...catch ---
-
+      } catch (fulfillmentError) {
+        console.error("Fulfillment Error:", fulfillmentError);
+        setError("Payment succeeded, but we failed to activate your plan. Please contact support.");
+        // NOTE: We do NOT set isProcessing to false here, as the payment is done.
+        // The user must contact support. The modal remains open to show the error.
       }
-    
-    } catch (initialError) {
-      // This outer catch handles errors from createPaymentIntent or other initial setup
-      setError(initialError.message);
-    } finally {
-      // This will run regardless of success or failure, perfect for resetting the UI state
-      setIsProcessing(false);
     }
-    // --- End of outer try...catch...finally ---
-  };
+  
+  } catch (error) {
+    // This catches errors from our backend (createPaymentIntent) or Stripe setup.
+    setError(error.message || "Could not initiate payment. Please try again.");
+    setIsProcessing(false);
+  }
+  // No 'finally' block is needed here because the processing state is handled
+  // carefully within each branch of the logic.
+};
+
+// --- END OF THE REPLACEMENT BLOCK ---
   
   const cardElementOptions = {
     style: {

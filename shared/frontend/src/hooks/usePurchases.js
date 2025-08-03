@@ -1,6 +1,6 @@
 // src/hooks/usePurchases.js
 import { useState, useEffect } from 'react';
-import { globalClient.db } from '../services/firebase'; // Import our configured Firestore service
+import { globalClient } from '../services/firebase-enhanced-global.js';
 import { collection, doc, query, onSnapshot, orderBy } from 'firebase/firestore';
 
 /**

@@ -1,7 +1,7 @@
 // src/utils/simulation.js -- NEW FILE for testing and simulation
 
 import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { globalClient.db, globalClient.auth } from '../services/firebase';
+import { globalClient } from '../services/firebase-enhanced-global.js';
 
 // --- BASE MOCK DATA ---
 const createBasePurchase = (overrides = {}) => {

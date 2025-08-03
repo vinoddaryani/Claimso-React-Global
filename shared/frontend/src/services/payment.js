@@ -19,7 +19,7 @@ class PaymentProcessor {
         console.log("SERVICE: Creating Stripe Checkout session...");
         
         // Data from the global client is available after it initializes.
-        const { globalClient.auth, region } = globalClient;
+        const { auth, region } = globalClient; // <--- CORRECT DESTRUCTURING
         const userId = globalClient.auth.currentUser?.uid;
         const userEmail = globalClient.auth.currentUser?.email;
 

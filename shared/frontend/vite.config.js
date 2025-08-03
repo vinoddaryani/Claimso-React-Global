@@ -1,36 +1,18 @@
-// vite.config.js
+// The NEW, DEFINITIVE vite.config.js for our Web Application
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(),  viteStaticCopy({ // <-- ADD THIS PLUGIN
-      targets: [
-        {
-          src: 'success.html',
-          dest: '.'
-        },
-        {
-          src: 'cancel.html',
-          dest: '.'
-        }
-      ]
-    })
-  ],
+  plugins: [react()],
+
+  // The 'build' configuration is now much simpler.
   build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'popup.html'),
-        'content-v2': resolve(__dirname, 'src/content-v2.js'),
-        'background': resolve(__dirname, 'src/background.js'),
-      },
-      output: {
-        entryFileNames: `assets/[name].js`,
-        chunkFileNames: `assets/[name].js`,
-        assetFileNames: `assets/[name].[ext]`,
-      }
-    },
-    outDir: 'dist'
+    // The output directory is 'dist', which is correct for Firebase Hosting.
+    outDir: 'dist',
+
+    // We no longer need complex rollupOptions. Vite's default behavior
+    // using index.html as the entry point is exactly what we want.
   }
 });

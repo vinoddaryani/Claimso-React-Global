@@ -4,8 +4,8 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';
-import { getAuth, onAuthStateChanged, signOut as firebaseSignOut, connectAuthEmulator } from 'firebase/globalClient.auth';
-import { getStorage, ref, uploadBytes, getDownloadURL, connectStorageEmulator } from 'firebase/globalClient.storage';
+import { getAuth, onAuthStateChanged, signOut as firebaseSignOut, connectAuthEmulator } from 'firebase/auth'; // Correct Path
+import { getStorage, ref, uploadBytes, getDownloadURL, connectStorageEmulator } from 'firebase/storage'; // Correct Path
 import { getPerformance } from 'firebase/performance';
 import { connectFirestoreEmulator } from 'firebase/firestore';
 

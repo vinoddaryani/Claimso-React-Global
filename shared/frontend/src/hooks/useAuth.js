@@ -1,8 +1,7 @@
 // src/hooks/useAuth.js
 import { useState, useEffect } from 'react';
-import { globalClient.auth, getUserData } from '../services/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/globalClient.auth';
-
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth'; // Correct Path
+import { globalClient, getUserData } from '../services/firebase-enhanced-global.js'; // Correct Imports
 /**
  * Custom hook to manage Firebase authentication state.
  * Provides the current user, user data from Firestore (like firstName), loading state, and a logout function.

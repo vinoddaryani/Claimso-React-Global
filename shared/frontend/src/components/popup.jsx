@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ClaimCard from './ClaimCard';
 import '../styles.css';
-import { globalClient.db } from '../firebase';
+import { globalClient } from '../services/firebase-enhanced-global.js';
 import { collection, getDocs } from 'firebase/firestore';
 
 export default function Popup() {
